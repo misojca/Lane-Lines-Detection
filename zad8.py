@@ -1,189 +1,150 @@
-import cv2 as cv
 import numpy as np
+import cv2 as cv
 import os
+from moviepy import VideoFileClip
 
-# ===== UČITAVANJE PODATAKA =====
+# --- 1. UCITAVANJE PARAMETARA (Kalibracija i Perspektiva) ---
 calib = np.load('result_files/calib.npz')
 mtx, dist = calib['mtx'], calib['dist']
 
-persp = np.load('result_files/perspective_matrices.npz')
-M, Minv = persp['M'], persp['Minv']
+# --- 2. POMOCNE FUNKCIJE ---
 
-# ===== POMOĆNE FUNKCIJE =====
-
-def get_binary_image(img):
-    # Pretvaramo u HLS jer je S kanal najstabilniji za bele linije
+def get_binary_video(img):
+    """Tvoja binarizacija iz zad3 (LAB + HLS + Sobel)"""
+    lab = cv.cvtColor(img, cv.COLOR_BGR2LAB)
+    b_channel = lab[:,:,2]
     hls = cv.cvtColor(img, cv.COLOR_BGR2HLS)
-    s = hls[:, :, 2]
+    l_channel, s_channel = hls[:,:,1], hls[:,:,2]
+    
+    # Zuta (LAB B-kanal) i Bela (HLS L-kanal)
+    yellow_binary = np.zeros_like(b_channel)
+    yellow_binary[(b_channel > 155)] = 1
+    white_binary = np.zeros_like(l_channel)
+    white_binary[(l_channel > 200)] = 1
 
+    # Sobel X gradijent
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     sobelx = cv.Sobel(gray, cv.CV_64F, 1, 0, ksize=3)
-    abs_sobel = np.absolute(sobelx)
-    scaled = np.uint8(255 * abs_sobel / np.max(abs_sobel))
+    abs_sobelx = np.absolute(sobelx)
+    scaled_sobel = np.uint8(255 * abs_sobelx / np.max(abs_sobelx))
+    sx_binary = np.zeros_like(scaled_sobel)
+    sx_binary[(scaled_sobel >= 30) & (scaled_sobel <= 100)] = 1
 
-    # Kombinujemo gradijent i boju
-    sxbinary = ((scaled >= 20) & (scaled <= 100))
-    sbinary = ((s >= 170) & (s <= 255))
+    combined = np.zeros_like(sx_binary)
+    # Kombinovanje: prioritet boji, Sobel samo gde ima zasićenja (S > 100)
+    combined[(yellow_binary == 1) | (white_binary == 1) | ((sx_binary == 1) & (s_channel > 100))] = 1
+    return combined
 
-    binary_output = np.zeros_like(s)
-    binary_output[(sxbinary | sbinary)] = 255
-    return binary_output
-
-def find_lane_pixels(binary_warped):
-    # Histogram donje polovine slike
+def find_lane_pixels_video(binary_warped):
+    """Sliding windows iz zad5 sa smanjenim marginom za stabilnost"""
     histogram = np.sum(binary_warped[binary_warped.shape[0]//2:,:], axis=0)
     midpoint = np.int32(histogram.shape[0]//2)
     leftx_base = np.argmax(histogram[:midpoint])
     rightx_base = np.argmax(histogram[midpoint:]) + midpoint
 
-    # Postavke kliznih prozora (Sliding Windows)
-    nwindows = 9
+    nwindows, margin, minpix = 9, 70, 50 # Smanjen margin na 70 zbog ograde
     window_height = np.int32(binary_warped.shape[0]//nwindows)
-    nonzero = binary_warped.nonzero()
-    nonzeroy = np.array(nonzero[0])
-    nonzerox = np.array(nonzero[1])
     
-    leftx_current = leftx_base
-    rightx_current = rightx_base
-    margin = 100
-    minpix = 50
-    left_lane_inds = []
-    right_lane_inds = []
+    nonzero = binary_warped.nonzero()
+    nonzeroy, nonzerox = np.array(nonzero[0]), np.array(nonzero[1])
+    leftx_current, rightx_current = leftx_base, rightx_base
+    left_lane_inds, right_lane_inds = [], []
 
     for window in range(nwindows):
         win_y_low = binary_warped.shape[0] - (window+1)*window_height
         win_y_high = binary_warped.shape[0] - window*window_height
+        
+        # Prozori
         win_xleft_low, win_xleft_high = leftx_current - margin, leftx_current + margin
         win_xright_low, win_xright_high = rightx_current - margin, rightx_current + margin
         
-        # Identifikacija piksela unutar prozora
-        good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) & 
-                          (nonzerox >= win_xleft_low) & (nonzerox < win_xleft_high)).nonzero()[0]
-        good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) & 
-                           (nonzerox >= win_xright_low) & (nonzerox < win_xright_high)).nonzero()[0]
+        good_left = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) & 
+                     (nonzerox >= win_xleft_low) & (nonzerox < win_xleft_high)).nonzero()[0]
+        good_right = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) & 
+                      (nonzerox >= win_xright_low) & (nonzerox < win_xright_high)).nonzero()[0]
         
-        left_lane_inds.append(good_left_inds)
-        right_lane_inds.append(good_right_inds)
+        left_lane_inds.append(good_left)
+        right_lane_inds.append(good_right)
         
-        if len(good_left_inds) > minpix:
-            leftx_current = np.int32(np.mean(nonzerox[good_left_inds]))
-        if len(good_right_inds) > minpix:
-            rightx_current = np.int32(np.mean(nonzerox[good_right_inds]))
-
-    left_lane_inds = np.concatenate(left_lane_inds)
-    right_lane_inds = np.concatenate(right_lane_inds)
-
-    leftx = nonzerox[left_lane_inds]
-    lefty = nonzeroy[left_lane_inds] 
-    rightx = nonzerox[right_lane_inds]
-    righty = nonzeroy[right_lane_inds]
-
-    return lefty, leftx, righty, rightx
-
-def calculate_metrics(img_shape, left_fit, right_fit):
-    # Definisanje konverzije piksel -> metar
-    ym_per_pix = 30/720 
-    xm_per_pix = 3.7/700
-    y_eval = img_shape[0] - 1
-    
-    # Radijus krivine u metrima
-    left_fit_cr = np.polyfit(np.linspace(0, img_shape[0]-1, img_shape[0])*ym_per_pix, 
-                             (left_fit[0]*np.linspace(0, img_shape[0]-1, img_shape[0])**2 + 
-                              left_fit[1]*np.linspace(0, img_shape[0]-1, img_shape[0]) + left_fit[2])*xm_per_pix, 2)
-    right_fit_cr = np.polyfit(np.linspace(0, img_shape[0]-1, img_shape[0])*ym_per_pix, 
-                              (right_fit[0]*np.linspace(0, img_shape[0]-1, img_shape[0])**2 + 
-                               right_fit[1]*np.linspace(0, img_shape[0]-1, img_shape[0]) + right_fit[2])*xm_per_pix, 2)
-    
-    left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0])
-    right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
-    radius = (left_curverad + right_curverad) / 2
-
-    # Pozicija vozila u odnosu na centar
-    car_pos = img_shape[1] / 2
-    lane_center = ( (left_fit[0]*y_eval**2 + left_fit[1]*y_eval + left_fit[2]) + 
-                    (right_fit[0]*y_eval**2 + right_fit[1]*y_eval + right_fit[2]) ) / 2
-    offset = (lane_center - car_pos) * xm_per_pix
-    
-    return radius, offset
-
-def project_back_to_road_video(undist, left_fit, right_fit, Minv, radius, offset):
-    h, w = undist.shape[:2]
-    ploty = np.linspace(0, h-1, h)
-    
-    left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
-    right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
-
-    warp_zero = np.zeros((h, w), dtype=np.uint8)
-    color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
-
-    pts_left = np.vstack([left_fitx, ploty]).T
-    pts_right = np.vstack([right_fitx, ploty]).T
-    pts = np.vstack([pts_left, pts_right[::-1]])
-    pts = np.int32([pts])
-
-    # Popunjavanje zelene površine
-    cv.fillPoly(color_warp, pts, (0, 255, 0))
-    # Iscrtavanje žutih linija sa strana (baš kao na tvojoj slici)
-    cv.polylines(color_warp, [np.int32(pts_left)], False, (0, 255, 255), 15)
-    cv.polylines(color_warp, [np.int32(pts_right)], False, (0, 255, 255), 15)
-
-    newwarp = cv.warpPerspective(color_warp, Minv, (w, h))
-    result = cv.addWeighted(undist, 1, newwarp, 0.3, 0)
-
-    # Ispis teksta
-    cv.putText(result, f"Radius of Curvature: {radius:.2f}m", (50, 50), 
-               cv.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-    direction = "left" if offset < 0 else "right"
-    cv.putText(result, f"Vehicle is {abs(offset):.2f}m {direction} of center", (50, 100), 
-               cv.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-
-    return result
-
-# ===== VIDEO PIPELINE =====
-video_path = 'test_videos/project_video01.mp4'
-cap = cv.VideoCapture(video_path)
-
-if not cap.isOpened():
-    print("Greška: Ne mogu da otvorim video!")
-    exit()
-
-h, w = int(cap.get(4)), int(cap.get(3))
-fourcc = cv.VideoWriter_fourcc(*'XVID')
-out = cv.VideoWriter('result_files/final_video.avi', fourcc, 25.0, (w, h))
-
-print("Obrada videa je započeta...")
-
-while cap.isOpened():
-    ret, frame = cap.read()
-    if not ret:
-        break
-
-    # 1. Ispravka distorzije
-    undist = cv.undistort(frame, mtx, dist)
-    
-    # 2. Binarna slika
-    binary = get_binary_image(undist)
-    
-    # 3. Bird's eye view
-    warped = cv.warpPerspective(binary, M, (w, h))
+        if len(good_left) > minpix: leftx_current = np.int32(np.mean(nonzerox[good_left]))
+        if len(good_right) > minpix: rightx_current = np.int32(np.mean(nonzerox[good_right]))
 
     try:
-        # 4. Pronalaženje piksela i fitovanje polinoma
-        ly, lx, ry, rx = find_lane_pixels(warped)
+        left_lane_inds = np.concatenate(left_lane_inds)
+        right_lane_inds = np.concatenate(right_lane_inds)
+        return nonzerox[left_lane_inds], nonzeroy[left_lane_inds], \
+               nonzerox[right_lane_inds], nonzeroy[right_lane_inds]
+    except:
+        return None, None, None, None
+
+# --- 3. GLAVNI PIPELINE ---
+
+def process_frame(frame):
+    # a) Undistort
+    undist = cv.undistort(frame, mtx, dist, None, mtx)
+    h, w = undist.shape[:2]
+
+    # b) Binarizacija
+    binary = get_binary_video(undist)
+
+    # c) Perspektiva (zad4 tačke)
+    src = np.float32([[w*0.45, h*0.62], [w*0.55, h*0.62], [w*0.85, h*0.95], [w*0.15, h*0.95]])
+    dst = np.float32([[w*0.2, 0], [w*0.8, 0], [w*0.8, h], [w*0.2, h]])
+    M = cv.getPerspectiveTransform(src, dst)
+    Minv = cv.getPerspectiveTransform(dst, src)
+    warped = cv.warpPerspective(binary, M, (w, h), flags=cv.INTER_LINEAR)
+
+    # d) Detekcija piksela i Fitovanje (zad5)
+    lx, ly, rx, ry = find_lane_pixels_video(warped)
+    
+    if lx is not None and len(lx) > 0 and len(rx) > 0:
         left_fit = np.polyfit(ly, lx, 2)
         right_fit = np.polyfit(ry, rx, 2)
         
-        # 5. Metrika
-        radius, offset = calculate_metrics((h, w), left_fit, right_fit)
+        # e) Metrika (zad6)
+        ploty = np.linspace(0, h-1, h)
+        left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
+        right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
         
-        # 6. Projekcija nazad na put pomoću tvoje funkcije
-        result = project_back_to_road_video(undist, left_fit, right_fit, Minv, radius, offset)
-    except Exception as e:
-        # Fallback ako detekcija ne uspe u nekom frejmu
-        result = undist 
+        ym_per_pix, xm_per_pix = 30/720, 3.7/700
+        left_fit_cr = np.polyfit(ploty*ym_per_pix, left_fitx*xm_per_pix, 2)
+        right_fit_cr = np.polyfit(ploty*ym_per_pix, right_fitx*xm_per_pix, 2)
+        l_rad = ((1 + (2*left_fit_cr[0]*h*ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0])
+        r_rad = ((1 + (2*right_fit_cr[0]*h*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
+        
+        offset = (( (left_fitx[-1] + right_fitx[-1])/2 ) - (w/2)) * xm_per_pix
 
-    out.write(result)
+        # f) Iscrtavanje nazad na put (zad7)
+        warp_zero = np.zeros_like(warped).astype(np.uint8)
+        color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
+        pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
+        pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
+        pts = np.hstack((pts_left, pts_right))
+        
+        cv.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))
+        newwarp = cv.warpPerspective(color_warp, Minv, (w, h))
+        result = cv.addWeighted(undist, 1, newwarp, 0.3, 0)
 
-cap.release()
-out.release()
-print("✅ Video uspešno sačuvan: result_files/final_video.avi")
+        # Ispisivanje teksta
+        avg_rad = (l_rad + r_rad) / 2
+        cv.putText(result, f"Curvature: {avg_rad:.1f}m", (50, 50), cv.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
+        cv.putText(result, f"Offset: {offset:.2f}m", (50, 100), cv.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
+        return result
+    else:
+        return undist # Ako detekcija ne uspe, vrati original (da video ne stane)
+
+# --- 4. POKRETANJE VIDEA ---
+# --- 4. POKRETANJE VIDEA (Kompatibilno sa MoviePy 2.x) ---
+output_video = 'result_files/final_video_output.mp4'
+input_video = 'test_videos/project_video03.mp4' 
+
+if not os.path.exists('result_files'):
+    os.makedirs('result_files')
+
+# U MoviePy 2.x fl_image se poziva preko .image_transform
+with VideoFileClip(input_video) as clip:
+    # Umesto clip.fl_image(process_frame)
+    processed_clip = clip.image_transform(process_frame)
+    processed_clip.write_videofile(output_video, audio=False)
+
+print(f"Video je uspešno sačuvan u {output_video}")

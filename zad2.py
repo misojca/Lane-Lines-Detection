@@ -10,7 +10,7 @@ rvecs = calibratio['rvecs']
 tvecs = calibratio['tvecs']
 
 # Load one of the test images
-img = cv2.imread('test_images/challange00101.jpg')
+img = cv2.imread('test_images/test1.jpg')
 h, w = img.shape[:2]
 
 # Obtain the new camera matrix and undistort the image
