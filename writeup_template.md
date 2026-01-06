@@ -63,7 +63,7 @@ Koraci:
 
     Bez ovoga radijus krivine bi bio pogresan jer bi distorzija sociva vestacki povecala ili smanjila stvarnu zakrivljenost puta. 
 
-    ![Calibration Undistorted](/result_files/calibration_undistorted.jpg)
+    ![Calibration Undistorted](result_files/calibration_undistorted.jpg)
 
 #### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 
@@ -79,9 +79,9 @@ Koraci:
     Finalna binarna slika dobijena je kao rezultat piksela koji su prepoznati kao zuti zbog B kanala, belih piksela zbog L kanala i 
     piksela koje su oznacene kao ivice koristeci Sobel operator
     
-    ![Original](/test_images/test3.jpg)
+    ![Original](test_images/test3.jpg)
 
-    ![Binary Threshold](/result_files/binary_thresholded.jpg)
+    ![Binary Threshold](result_files/binary_thresholded.jpg)
 
 #### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
@@ -100,7 +100,7 @@ Koraci:
     Rezultat: Dobijena je slika iz pticje perspektive gde su linije paralelne (ako je put prav) sto olaksava fitovanje polinoma.
     
     
-    ![Perspective Transform](/result_files/perspective_warped.jpg)
+    ![Perspective Transform](result_files/perspective_warped.jpg)
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
     Nakon sto smo dobili sliku iz pticje perspektive, bele i zute trake bi trebalo da izgledaju kao dve jasne linije, ali zbog suma, senki ili ostecenja na putu, algoritam ne zna koji beli pikseli pripadaju levoj, a koji desnoj traci. Trebalo je osmisliti nacin da ih razdvojimo i matematicki opisemo njihovu putanju.
@@ -120,7 +120,7 @@ Koraci:
 
     Ovaj pristup nam omogucava da dobijemo kontinuiranu liniju cak i tamo gde je isprekidana traka.
 
-    ![Perspective Transform](/result_files/lane_pixels_fitted.jpg)
+    ![Perspective Transform](result_files/lane_pixels_fitted.jpg)
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
@@ -136,9 +136,9 @@ Koraci:
     Pozicija vozila u traci: Ovde sam posao od pretpostavke da je kamera montirana tacno na centar vozila.
     -Izracunao sam x koordinate leve i desne linije na samom dnu slike, a zatim pronasao njihovu sredinu.
     -Sredina same slike predstavlja gde se nalazi centar automobila.
-    -Odstupanje (Offset): Razlika izmedju centra slike i centra trake nam daje informaciju koliko auto "bezi" ulevo ili udesno. Taj rezultat sam pomnozio   sa xm_per_pix da bih dobio tacno odstupanje u metrima (npr. 0.25m udesno).
+    -Odstupanje (Offset): Razlika izmedju centra slike i centra trake nam daje informaciju koliko je automobil pomeren ulevo ili udesno. Taj rezultat sam pomnozio sa xm_per_pix da bih dobio tacno odstupanje u metrima (npr. 0.25m             udesno).
 
-    Ove informacije se ispisuju u realnom vremenu na video snimku. Ako je radijus veoma velik (npr. preko 2000m), to nam govori da je put prakticno prav. Offset nam omogucava da razumemo koliko je vozac precizan u drzanju sredine trake.
+    Ove informacije se ispisuju u realnom vremenu na video snimku. Ako je radijus veoma velik (npr. preko 2000m), to nam govori da je put prakticno prav. Offset nam omogucava da razumemo koliko je vozac precizan u drzanju sredine             trake.
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
@@ -154,12 +154,12 @@ Koraci:
 
     Finalna slika prikazuje jasno osencenu zelenu povrsinu koja precizno prati kolovoznu traku.
 
-    ![Final Result](/result_files/final_result_image.jpg)
+    ![Final Result](result_files/final_result_image.jpg)
 
 ### Pipeline (video)
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-    Konacan snimak:  /result_files/final_video_opencv.avi
+    Konacan snimak:  result_files/final_video_opencv.avi
 
 ### Discussion
 
