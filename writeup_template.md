@@ -53,7 +53,8 @@ Koraci:
 
     Rezultate sam sacuvao u .npz fajl da ne bih ponavljao proces pri svakom pokretanju videa.
 
-    ![Calibration Original](./result_files/calibration_original.jpg)
+    ![Calibration Original](https://github.com/misojca/Lane-Lines-Detection/blob/main/result_files/calibration_original.jpg?raw=true)
+    
 
 ### Pipeline (single images)
 #### 1. Provide an example of a distortion-corrected image.
@@ -62,7 +63,7 @@ Koraci:
 
     Bez ovoga radijus krivine bi bio pogresan jer bi distorzija sociva vestacki povecala ili smanjila stvarnu zakrivljenost puta. 
 
-    ![Calibration Undistorted](./result_files/calibration_undistorted.jpg)
+    ![Calibration Undistorted](https://github.com/misojca/Lane-Lines-Detection/blob/main/result_files/calibration_undistorted.jpg?raw=true)
 
 #### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 
@@ -77,9 +78,10 @@ Koraci:
 
     Finalna binarna slika dobijena je kao rezultat piksela koji su prepoznati kao zuti zbog B kanala, belih piksela zbog L kanala i 
     piksela koje su oznacene kao ivice koristeci Sobel operator
-    ![Original](./test_images/test3.jpg)
+    
+    ![Original](https://github.com/misojca/Lane-Lines-Detection/blob/main/test_images/test3.jpg?raw=true)
 
-    ![Binary Threshold](./result_files/binary_thresholded.jpg)
+    ![Binary Threshold](https://github.com/misojca/Lane-Lines-Detection/blob/main/result_files/binary_thresholded.jpg?raw=true)
 
 #### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
@@ -97,8 +99,8 @@ Koraci:
 
     Rezultat: Dobijena je slika iz pticje perspektive gde su linije paralelne (ako je put prav) sto olaksava fitovanje polinoma.
     
-    ![Binary Threshold](./result_files/binary_thresholded.jpg)
-    ![Perspective Transform](./result_files/perspective_warped.jpg)
+    
+    ![Perspective Transform](https://github.com/misojca/Lane-Lines-Detection/blob/main/result_files/perspective_warped.jpg?raw=true)
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
     Nakon sto smo dobili sliku iz pticje perspektive, bele i zute trake bi trebalo da izgledaju kao dve jasne linije, ali zbog suma, senki ili ostecenja na putu, algoritam ne zna koji beli pikseli pripadaju levoj, a koji desnoj traci. Trebalo je osmisliti nacin da ih razdvojimo i matematicki opisemo njihovu putanju.
@@ -118,7 +120,7 @@ Koraci:
 
     Ovaj pristup nam omogucava da dobijemo kontinuiranu liniju cak i tamo gde je isprekidana traka.
 
-    ![Perspective Transform](./result_files/lane_pixels_fitted.jpg)
+    ![Perspective Transform](https://github.com/misojca/Lane-Lines-Detection/blob/main/result_files/lane_pixels_fitted.jpg?raw=true)
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
@@ -149,12 +151,12 @@ Koraci:
 
     Finalna slika prikazuje jasno osencenu zelenu povrsinu koja precizno prati kolovoznu traku.
 
-    ![Final Result](./result_files/final_result_image.jpg)
+    ![Final Result](./result_files/https://github.com/misojca/Lane-Lines-Detection/blob/main/result_files/final_result_image.jpg?raw=true)
 
 ### Pipeline (video)
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-    Konacan snimak se nalazi u /result_files/final_video_opencv.avi
+    Konacan snimak:  /result_files/final_video_opencv.avi
 
 ### Discussion
 
