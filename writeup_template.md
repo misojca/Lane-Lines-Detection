@@ -53,19 +53,23 @@ Koraci:
 
     Rezultate sam sacuvao u .npz fajl da ne bih ponavljao proces pri svakom pokretanju videa.
 
+    ![Calibration Original](./result_files/calibration_original.jpg)
+
 ### Pipeline (single images)
 #### 1. Provide an example of a distortion-corrected image.
 
-Primenjena je funkcija cv.undistort
+    Primenjena je funkcija cv.undistort
 
-Bez ovoga, radijus krivine bi bio pogresan jer bi distorzija sociva vestacki povecala ili smanjila stvarnu zakrivljenost puta. 
+    Bez ovoga radijus krivine bi bio pogresan jer bi distorzija sociva vestacki povecala ili smanjila stvarnu zakrivljenost puta. 
+
+    ![Calibration Undistorted](./result_files/calibration_undistorted.jpg)
 
 #### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 
-Put ima različite uslove (senke, svetli asfalt, zute i bele linije) pa je trebalo naci nacin
-kako prepoznati lepo linije.
+    Put ima različite uslove (senke, svetli asfalt, zute i bele linije) pa je trebalo naci nacin
+    kako prepoznati lepo linije.
 
-Koraci:
+    Koraci:
 
     Sobel operator: Izracunao sam gradijent po x-osi. Ovo je kljucno jer linije traka teze da budu vertikalne, a Sobel x naglasava nagle promene intenziteta u horizontalnom pravcu.
 
@@ -73,22 +77,28 @@ Koraci:
 
     Finalna binarna slika dobijena je kao rezultat piksela koji su prepoznati kao zuti zbog B kanala, belih piksela zbog L kanala i 
     piksela koje su oznacene kao ivice koristeci Sobel operator
+    ![Original](./test_images/test3.jpg)
+
+    ![Binary Threshold](./result_files/binary_thresholded.jpg)
 
 #### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
-U originalnoj slici leva i desna linija kolovozne trake se suzavaju. U tom prostoru ne mozemo meriti sirinu trake ili radijus. 
+    U originalnoj slici leva i desna linija kolovozne trake se suzavaju. U tom prostoru ne mozemo meriti sirinu trake ili radijus. 
 
-Koraci:
+    Koraci:
 
     Izvorne tacke: Izabrao sam 4 tacke na slici koje u prirodi cine pravougaonik ispred vozila.
 
     Destinacione tacke: Odredio sam gde te tacke treba da se preslikaju na novoj slici. Cilj je da se trapez ispravi u pravougaonik, cime linije traka postaju paralelne.
 
-    Izračunavanje matrice transformacije: Koristio sam funkciju cv.getPerspectiveTransform(src, dst) da dobijem matricu M. Takodje, izracunao sam i inverznu matricu Minv (cv.getPerspectiveTransform(dst, src)), koja je kljucna za kasnije vraćanje detektovane trake nazad u originalnu perspektivu vozaca
+    Izracunavanje matrice transformacije: Koristio sam funkciju cv.getPerspectiveTransform(src, dst) da dobijem matricu M. Takodje, izracunao sam i inverznu matricu Minv (cv.getPerspectiveTransform(dst, src)), koja je kljucna za kasnije vraćanje detektovane trake nazad u originalnu perspektivu vozaca
 
-    Primena: Konačna transformacija se vrši funkcijom cv.warpPerspective, koja primenjuje matricu na binarnu sliku.
+    Primena: Konacna transformacija se vrši funkcijom cv.warpPerspective, koja primenjuje matricu na binarnu sliku.
 
-    Rezultat: Dobijena je "bird-eye" slika gde su linije paralelne (ako je put prav), sto olaksava fitovanje polinoma.
+    Rezultat: Dobijena je slika iz pticje perspektive gde su linije paralelne (ako je put prav) sto olaksava fitovanje polinoma.
+    
+    ![Binary Threshold](./result_files/binary_thresholded.jpg)
+    ![Perspective Transform](./result_files/perspective_warped.jpg)
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
     Nakon sto smo dobili sliku iz pticje perspektive, bele i zute trake bi trebalo da izgledaju kao dve jasne linije, ali zbog suma, senki ili ostecenja na putu, algoritam ne zna koji beli pikseli pripadaju levoj, a koji desnoj traci. Trebalo je osmisliti nacin da ih razdvojimo i matematicki opisemo njihovu putanju.
@@ -108,10 +118,12 @@ Koraci:
 
     Ovaj pristup nam omogucava da dobijemo kontinuiranu liniju cak i tamo gde je isprekidana traka.
 
+    ![Perspective Transform](./result_files/lane_pixels_fitted.jpg)
+
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
     Izazov u ovom koraku je cinjenica da algoritam posmatra sliku kroz piksele, a nama su potrebni metri za voznju.
-
+    /////////////////////// DODATI FORMULU
     Radijus krivine: Da bih dobio realan radijus u metrima, uradio sam sledece:
     -Definisao sam faktore konverzije na osnovu standarda sirine trake (3.7 metara) i duzine vidljivog dela puta (30 metara).
     -Piksele traka sam pomnozio ovim faktorima i ponovo izracunao koeficijente polinoma (left_fit_cr i right_fit_cr), ali sada u metrima.
@@ -137,18 +149,20 @@ Koraci:
 
     Finalna slika prikazuje jasno osencenu zelenu povrsinu koja precizno prati kolovoznu traku.
 
+    ![Final Result](./result_files/final_result_image.jpg)
+
 ### Pipeline (video)
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Sistem se testira na video snimcima. Bilo je važno uočiti da se pri promeni asfalta (iz tamnog u svetli) binarizacija može zbuniti, pa smo zato uveli kombinaciju više kanala boja da bi sistem ostao stabilan
+    Konacan snimak se nalazi u /result_files/final_video_opencv.avi
 
 ### Discussion
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Drvece pored puta baca senke koje Sobel operator moze pogresno prepoznati kao liniju. To smo resili oslanjanjem na boju (LAB).
+    Drvece pored puta baca senke koje Sobel operator moze pogresno prepoznati kao liniju. To smo resili oslanjanjem na boju (LAB).
 
-Ako bi ispred nas bio auto koji potpuno zaklanja linije ili ako bi put bio prekriven snegom ili blatom. U veoma ostrim krivinama bi lose prepoznao levu i desnu traku
+    Ako bi ispred nas bio auto koji potpuno zaklanja linije ili ako bi put bio prekriven snegom ili blatom. U veoma ostrim krivinama bi lose prepoznao levu i desnu traku
 
-Implementacija algoritma bi bila robusnija ako bi automatski pomerao "source" tacke u zavisnosti od nagiba puta ili brzine kretanja. Potrebno je prosirti algoritam da radi dobro za ulazne video snimke sa vise suma
+    Implementacija algoritma bi bila robusnija ako bi automatski pomerao "source" tacke u zavisnosti od nagiba puta ili brzine kretanja. Potrebno je prosirti algoritam da radi dobro za ulazne video snimke sa vise suma
 
