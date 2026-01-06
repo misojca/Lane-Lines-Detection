@@ -125,7 +125,7 @@ Koraci:
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
     Izazov u ovom koraku je cinjenica da algoritam posmatra sliku kroz piksele, a nama su potrebni metri za voznju.
-    /////////////////////// DODATI FORMULU
+    $$R_{curve} = \frac{[1 + (2Ay + B)^2]^{3/2}}{|2A|}$$
     Radijus krivine: Da bih dobio realan radijus u metrima, uradio sam sledece:
     -Definisao sam faktore konverzije na osnovu standarda sirine trake (3.7 metara) i duzine vidljivog dela puta (30 metara).
     -Piksele traka sam pomnozio ovim faktorima i ponovo izracunao koeficijente polinoma (left_fit_cr i right_fit_cr), ali sada u metrima.
