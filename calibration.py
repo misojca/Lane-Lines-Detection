@@ -12,7 +12,7 @@ def get_calibration_params():
         data = np.load(calib_path)
         return data['mtx'], data['dist']
     
-    rows = 5
+    rows = 6
     cols = 9
 
     # Set the termination criteria for the corner sub-pixel algorithm

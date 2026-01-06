@@ -4,31 +4,6 @@ import os
 import glob
 from calibration import get_calibration_params
 
-# --- 2. POMOĆNE FUNKCIJE ---
-"""
-def get_binary_video(img):
-    lab = cv.cvtColor(img, cv.COLOR_BGR2LAB)
-    b_channel = lab[:,:,2]
-    hls = cv.cvtColor(img, cv.COLOR_BGR2HLS)
-    l_channel, s_channel = hls[:,:,1], hls[:,:,2]
-    
-    yellow_binary = np.zeros_like(b_channel)
-    yellow_binary[(b_channel > 155)] = 1
-    white_binary = np.zeros_like(l_channel)
-    white_binary[(l_channel > 200)] = 1
-    
-    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    sobelx = cv.Sobel(gray, cv.CV_64F, 1, 0, ksize=3)
-    abs_sobelx = np.absolute(sobelx)
-    scaled_sobel = np.uint8(255 * abs_sobelx / np.max(abs_sobelx))
-    
-    sx_binary = np.zeros_like(scaled_sobel)
-    sx_binary[(scaled_sobel >= 30) & (scaled_sobel <= 100)] = 1
-    
-    combined = np.zeros_like(sx_binary)
-    combined[(yellow_binary == 1) | (white_binary == 1) | ((sx_binary == 1) & (s_channel > 100))] = 1
-    return combined
-    """
 def get_binary_video(img):
     # Konverzija u LAB prostor
     lab = cv.cvtColor(img, cv.COLOR_BGR2LAB)
@@ -147,64 +122,72 @@ def process_frame(frame, mtx, dist):
 # --- 3. MAIN FUNKCIJA ---
 
 def main():
+    if not os.path.exists('result_files'):
+        os.makedirs('result_files')
+
     mtx, dist = get_calibration_params()
 
+    # --- NOVI DEO: Kalibracija (Dokaz za Writeup) ---
+    cal_img = cv.imread('camera_cal/calibration1.jpg')
+    if cal_img is not None:
+        cv.imwrite('result_files/calibration_original.jpg', cal_img)
+        cal_undist = cv.undistort(cal_img, mtx, dist, None, mtx)
+        cv.imwrite('result_files/calibration_undistorted.jpg', cal_undist)
+
+    # Koristimo test2.jpg kao osnovu za dokumentaciju
     test_img = cv.imread('test_images/test3.jpg')
     if test_img is not None:
         h, w = test_img.shape[:2]
         
-        # Undistort
+        # 1. Undistort
         demo_undist = cv.undistort(test_img, mtx, dist, None, mtx)
+        cv.imwrite('result_files/road_undistorted.jpg', demo_undist)
         cv.imshow('Undistort', demo_undist)
         cv.waitKey(0)
         
-        # Binary
+        # 2. Binary (Thresholded)
         demo_binary = get_binary_video(demo_undist)
+        cv.imwrite('result_files/binary_thresholded.jpg', demo_binary * 255)
         cv.imshow('Binary', demo_binary * 255)
         cv.waitKey(0)
         
-        # Zad4: Perspective transform
+        # 3. Perspective transform (Warped)
         src = np.float32([[w*0.45, h*0.62], [w*0.55, h*0.62], [w*0.85, h*0.95], [w*0.15, h*0.95]])
         dst = np.float32([[w*0.2, 0], [w*0.8, 0], [w*0.8, h], [w*0.2, h]])
         M = cv.getPerspectiveTransform(src, dst)
         demo_warped = cv.warpPerspective(demo_binary, M, (w, h))
+        cv.imwrite('result_files/perspective_warped.jpg', demo_warped * 255)
         cv.imshow('Zad4: Perspektiva', demo_warped * 255)
         cv.waitKey(0)
         
-        #  Lane Detection sa ispisom polinoma
+        # 4. Lane Detection Vizualizacija
         lx, ly, rx, ry, demo_lanes_img = find_lane_pixels_video(demo_warped, draw_lanes=True)
         if demo_lanes_img is not None:
-            # Fitovanje polinoma za prikaz 
             left_fit = np.polyfit(ly, lx, 2)
             right_fit = np.polyfit(ry, rx, 2)
             ploty = np.linspace(0, h-1, h)
             left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
             right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
 
-            # Iscrtavanje zute krive preko piksela
             for i in range(len(ploty)-1):
                 cv.line(demo_lanes_img, (int(left_fitx[i]), int(ploty[i])), (int(left_fitx[i+1]), int(ploty[i+1])), (0, 255, 255), 3)
                 cv.line(demo_lanes_img, (int(right_fitx[i]), int(ploty[i])), (int(right_fitx[i+1]), int(ploty[i+1])), (0, 255, 255), 3)
 
-            # Formule polinoma
-            f_left_txt = f"f_left(y) = {left_fit[0]:.2e}y^2 + {left_fit[1]:.2f}y + {left_fit[2]:.1f}"
-            f_right_txt = f"f_right(y) = {right_fit[0]:.2e}y^2 + {right_fit[1]:.2f}y + {right_fit[2]:.1f}"
-            
-            cv.putText(demo_lanes_img, f_left_txt, (20, 40), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
-            cv.putText(demo_lanes_img, f_right_txt, (20, 70), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
-
+            cv.imwrite('result_files/lane_pixels_fitted.jpg', demo_lanes_img)
             cv.imshow('Detekcija linija (L-Crvena, D-Plava)', demo_lanes_img)
             cv.waitKey(0)
         
-        # Final Result on Image
+        # 5. Final Result on Image
         demo_final = process_frame(test_img, mtx, dist)
+        cv.imwrite('result_files/final_result_image.jpg', demo_final)
         cv.imshow('Finalna slika', demo_final)
         
+        print("Sve slike za dokumentaciju su sacuvane u 'result_files/'")
         print("Pritisni taster da ugasis slike i pokrenes video...")
         cv.waitKey(0)
         cv.destroyAllWindows()
 
-    # 3. VIDEO PROCESIRANJE (Zad8)
+    # 3. VIDEO PROCESIRANJE
     input_path = 'test_videos/project_video01.mp4'
     output_path = 'result_files/final_video_opencv.avi'
     
