@@ -114,12 +114,11 @@ def process_frame(frame, mtx, dist):
         newwarp = cv.warpPerspective(color_warp, Minv, (w, h))
         result = cv.addWeighted(undist, 1, newwarp, 0.3, 0)
         
-        cv.putText(result, f"Radijus: {(l_rad+r_rad)/2:.1f}m", (50, 50), cv.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
+        cv.putText(result, f"Radius: {(l_rad+r_rad)/2:.1f}m", (50, 50), cv.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
         cv.putText(result, f"Offset: {offset:.2f}m", (50, 100), cv.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
         return result
     return undist
 
-# --- 3. MAIN FUNKCIJA ---
 
 def main():
     if not os.path.exists('result_files'):
@@ -157,7 +156,7 @@ def main():
         M = cv.getPerspectiveTransform(src, dst)
         demo_warped = cv.warpPerspective(demo_binary, M, (w, h))
         cv.imwrite('result_files/perspective_warped.jpg', demo_warped * 255)
-        cv.imshow('Zad4: Perspektiva', demo_warped * 255)
+        cv.imshow('Perspective Transform', demo_warped * 255)
         cv.waitKey(0)
         
         # 4. Lane Detection Vizualizacija
@@ -174,16 +173,14 @@ def main():
                 cv.line(demo_lanes_img, (int(right_fitx[i]), int(ploty[i])), (int(right_fitx[i+1]), int(ploty[i+1])), (0, 255, 255), 3)
 
             cv.imwrite('result_files/lane_pixels_fitted.jpg', demo_lanes_img)
-            cv.imshow('Detekcija linija (L-Crvena, D-Plava)', demo_lanes_img)
+            cv.imshow('Lane line detection', demo_lanes_img)
             cv.waitKey(0)
         
         # 5. Final Result on Image
         demo_final = process_frame(test_img, mtx, dist)
         cv.imwrite('result_files/final_result_image.jpg', demo_final)
-        cv.imshow('Finalna slika', demo_final)
-        
-        print("Sve slike za dokumentaciju su sacuvane u 'result_files/'")
-        print("Pritisni taster da ugasis slike i pokrenes video...")
+        cv.imshow('Final image', demo_final)
+
         cv.waitKey(0)
         cv.destroyAllWindows()
 
