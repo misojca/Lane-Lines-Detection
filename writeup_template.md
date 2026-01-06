@@ -53,7 +53,7 @@ Koraci:
 
     Rezultate sam sacuvao u .npz fajl da ne bih ponavljao proces pri svakom pokretanju videa.
 
-    ![Calibration Original](https://github.com/misojca/Lane-Lines-Detection/blob/main/result_files/calibration_original.jpg?raw=true)
+    ![image alt](https://github.com/misojca/Lane-Lines-Detection/blob/e0e8711e0dcb0ce70e35ef95289b8845bf96e38b/result_files/calibration_original.jpg)
     
 
 ### Pipeline (single images)
