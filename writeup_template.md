@@ -38,18 +38,18 @@ You're reading it!
 ### Camera Calibration
 #### 1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
 
-Sociva kamere nisu savrsena i unose distorziju , što uzrokuje da ravne linije na ivicama slike izgledaju zakrivljeno. 
+Sociva kamere nisu savrsena i unose distorziju , sto uzrokuje da ravne linije na ivicama slike izgledaju zakrivljeno. 
 Da bismo precizno merili krivinu puta moramo resiti taj problem. Postupak se nalazi u fajlu calibration.py
     
 Koraci:
 
-Priprema koordinata: Kreirao sam niz objectPoints koji predstavlja stvarne koordinate uglova sahovske table (npr. 9×5 uglova).
+Priprema koordinata: Kreirao sam niz objectPoints koji predstavlja stvarne koordinate uglova sahovske table (npr. 9×6 uglova).
 
-Koristeci cv.findChessboardCorners, prošao sam kroz sve slike iz camera_cal foldera.
+Koristeci cv.findChessboardCorners, prosao sam kroz sve slike iz camera_cal foldera.
 
-Za svaku uspešnu detekciju, koristio sam cv.cornerSubPix da dobijem preciznost na nivou sub-piksela.
+Za svaku uspesnu detekciju, koristio sam cv.cornerSubPix da dobijem preciznost na nivou sub-piksela.
 
-Pozivom cv.calibrateCamera, algoritam je uporedio 3D objectPoints i 2D imgPoints da bi izračunao matricu kamere i koeficijente 
+Pozivom cv.calibrateCamera, algoritam je uporedio 3D objectPoints i 2D imgPoints da bi izracunao matricu kamere i koeficijente 
 distorzije.
 
 Rezultate sam sacuvao u .npz fajl da ne bih ponavljao proces pri svakom pokretanju videa.
@@ -68,7 +68,7 @@ Bez ovoga radijus krivine bi bio pogresan jer bi distorzija sociva vestacki pove
 
 #### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 
-Put ima različite uslove (senke, svetli asfalt, zute i bele linije) pa je trebalo naci nacin
+Put ima razlicite uslove (senke, svetli asfalt, zute i bele linije) pa je trebalo naci nacin
 kako prepoznati lepo linije.
 
 Koraci:
@@ -97,10 +97,10 @@ Destinacione tacke: Odredio sam gde te tacke treba da se preslikaju na novoj sli
 cime linije traka postaju paralelne.
 
 Izracunavanje matrice transformacije: Koristio sam funkciju cv.getPerspectiveTransform(src, dst) da dobijem matricu M. Takodje, 
-izracunao sam i inverznu matricu Minv (cv.getPerspectiveTransform(dst, src)), koja je kljucna za kasnije vraćanje detektovane 
+izracunao sam i inverznu matricu Minv (cv.getPerspectiveTransform(dst, src)), koja je kljucna za kasnije vracanje detektovane 
 trake nazad u originalnu perspektivu vozaca
 
-Primena: Konacna transformacija se vrši funkcijom cv.warpPerspective, koja primenjuje matricu na binarnu sliku.
+Primena: Konacna transformacija se vrsi funkcijom cv.warpPerspective, koja primenjuje matricu na binarnu sliku.
 
 Rezultat: Dobijena je slika iz pticje perspektive gde su linije paralelne (ako je put prav) sto olaksava fitovanje polinoma.
     
@@ -124,7 +124,7 @@ levo ili desno tako da mu centar bude u sredini mase pronadjenih piksela.
 
 Ovo omogucava prozorima da "prate" krivinu puta cak i kada ona naglo skrece.
 
-Nakon sto su prozori prosli od dna do vrha slike, sakupio sam sve koordinate piksela koji su "upali" u leve prozore i sve koji su
+Nakon sto su prozori prosli od dna do vrha slike, sakupio sam sve koordinate piksela koji su upali u leve prozore i sve koji su
 upali u desne.
 Koristio sam funkciju np.polyfit(ly, lx, 2) da kroz te tacke provucem najprecizniju mogucu krivu drugog reda.
 
@@ -147,7 +147,7 @@ Pozicija vozila u traci: Ovde sam posao od pretpostavke da je kamera montirana t
 -Izracunao sam x koordinate leve i desne linije na samom dnu slike, a zatim pronasao njihovu sredinu.
 -Sredina same slike predstavlja gde se nalazi centar automobila.
 -Odstupanje (Offset): Razlika izmedju centra slike i centra trake nam daje informaciju koliko je automobil pomeren ulevo ili udesno. 
-Taj rezultat sam pomnozio sa xm_per_pix da bih dobio tacno odstupanje u metrima (npr. 0.25m            udesno).
+Taj rezultat sam pomnozio sa xm_per_pix da bih dobio tacno odstupanje u metrima (npr. 0.25m udesno).
 
 Ove informacije se ispisuju u realnom vremenu na video snimku. Ako je radijus veoma velik (npr. preko 2000m), to nam govori da je 
 put prakticno prav. Offset nam omogucava da razumemo koliko je vozac precizan u drzanju sredine          trake.
@@ -182,9 +182,9 @@ Konacan snimak:  result_files/final_video_opencv.avi
 
 Drvece pored puta baca senke koje Sobel operator moze pogresno prepoznati kao liniju. To smo resili oslanjanjem na boju (LAB).
 
-Ako bi ispred nas bio auto koji potpuno zaklanja linije ili ako bi put bio prekriven snegom ili blatom. U veoma ostrim krivinama 
+Ako bi ispred nas bio auto koji potpuno zaklanja linije ili ako bi put bio prekriven snegom ili blatom algoritam ne bi dobro radio. U veoma ostrim krivinama 
 bi lose prepoznao levu i desnu traku
 
-    mplementacija algoritma bi bila robusnija ako bi automatski pomerao "source" tacke u zavisnosti od nagiba puta ili brzine kretanja. Potrebno je 
-    prosirti algoritam da radi dobro za ulazne video snimke sa vise suma.
+Implementacija algoritma bi bila robusnija ako bi automatski pomerao izvorne (source) tacke u zavisnosti od nagiba puta ili brzine kretanja. Potrebno je 
+prosirti algoritam da radi dobro za ulazne video snimke sa vise suma.
 
