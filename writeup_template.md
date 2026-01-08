@@ -53,7 +53,7 @@ Koraci:
 
     Rezultate sam sacuvao u .npz fajl da ne bih ponavljao proces pri svakom pokretanju videa.
 
-    ![Calibration Original](result_files/calibration_original.jpg)
+![Calibration Original](result_files/calibration_original.jpg)
     
 
 ### Pipeline (single images)
@@ -79,9 +79,9 @@ Koraci:
     Finalna binarna slika dobijena je kao rezultat piksela koji su prepoznati kao zuti zbog B kanala, belih piksela zbog L kanala i 
     piksela koje su oznacene kao ivice koristeci Sobel operator
     
-    ![Original](test_images/test3.jpg)
+![Original](test_images/test3.jpg)
 
-    ![Binary Threshold](result_files/binary_thresholded.jpg)
+![Binary Threshold](result_files/binary_thresholded.jpg)
 
 #### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
@@ -100,7 +100,7 @@ Koraci:
     Rezultat: Dobijena je slika iz pticje perspektive gde su linije paralelne (ako je put prav) sto olaksava fitovanje polinoma.
     
     
-    ![Perspective Transform](result_files/perspective_warped.jpg)
+![Perspective Transform](result_files/perspective_warped.jpg)
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
     Nakon sto smo dobili sliku iz pticje perspektive, bele i zute trake bi trebalo da izgledaju kao dve jasne linije, ali zbog suma, senki ili ostecenja na putu, algoritam ne zna koji beli pikseli pripadaju levoj, a koji desnoj traci. Trebalo je osmisliti nacin da ih razdvojimo i matematicki opisemo njihovu putanju.
@@ -120,7 +120,7 @@ Koraci:
 
     Ovaj pristup nam omogucava da dobijemo kontinuiranu liniju cak i tamo gde je isprekidana traka.
 
-    ![Perspective Transform](result_files/lane_pixels_fitted.jpg)
+![Perspective Transform](result_files/lane_pixels_fitted.jpg)
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
@@ -154,7 +154,7 @@ Koraci:
 
     Finalna slika prikazuje jasno osencenu zelenu povrsinu koja precizno prati kolovoznu traku.
 
-    ![Final Result](result_files/final_result_image.jpg)
+![Final Result](result_files/final_result_image.jpg)
 
 ### Pipeline (video)
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
@@ -169,5 +169,5 @@ Koraci:
 
     Ako bi ispred nas bio auto koji potpuno zaklanja linije ili ako bi put bio prekriven snegom ili blatom. U veoma ostrim krivinama bi lose prepoznao levu i desnu traku
 
-    Implementacija algoritma bi bila robusnija ako bi automatski pomerao "source" tacke u zavisnosti od nagiba puta ili brzine kretanja. Potrebno je prosirti algoritam da radi dobro za ulazne video snimke sa vise suma
+    Implementacija algoritma bi bila robusnija ako bi automatski pomerao "source" tacke u zavisnosti od nagiba puta ili brzine kretanja. Potrebno je prosirti algoritam da radi dobro za ulazne video snimke sa vise suma.
 
