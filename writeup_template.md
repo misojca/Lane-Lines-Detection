@@ -180,11 +180,9 @@ Konacan snimak:  result_files/final_video_opencv.avi
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Drvece pored puta baca senke koje Sobel operator moze pogresno prepoznati kao liniju. To smo resili oslanjanjem na boju (LAB).
+Postojali su problemi sa bojom asfalta. Takodje senka od ograde na putu je pravila problem kao i svetlije na asfaltu koje se nalaze unutar kolovozne trake.
 
-Ako bi ispred nas bio auto koji potpuno zaklanja linije ili ako bi put bio prekriven snegom ili blatom algoritam ne bi dobro radio. U veoma ostrim krivinama 
-bi lose prepoznao levu i desnu traku
+Ako bi ispred nas bio auto koji potpuno zaklanja linije ili ako bi put bio prekriven snegom ili blatom algoritam ne bi dobro radio. U veoma ostrim krivinama bi lose prepoznao levu i desnu traku
 
-Implementacija algoritma bi bila robusnija ako bi automatski pomerao izvorne (source) tacke u zavisnosti od nagiba puta ili brzine kretanja. Potrebno je 
-prosirti algoritam da radi dobro za ulazne video snimke sa vise suma.
+Implementacija algoritma bi bila robusnija ako bi automatski pomerao izvorne (source) tacke u zavisnosti od nagiba puta ili brzine kretanja. Potrebno je prosirti algoritam da radi dobro za ulazne video snimke sa vise suma kao i u slucaju ostrih krivina
 
