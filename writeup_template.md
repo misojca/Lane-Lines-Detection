@@ -169,12 +169,13 @@ Na kraju pomocu cv.putText ispisao sam izracunate vrednosti radijusa krivine i o
 
 Finalna slika prikazuje jasno osencenu zelenu povrsinu koja precizno prati kolovoznu traku.
 
-![Final Result](result_files/final_result_image.jpg)
+![Final Image Result](result_files/final_result_image.jpg)
 
 ### Pipeline (video)
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Konacan snimak:  result_files/final_video_opencv.avi
+* [Finalni video rezultat (Project Video 01)](result_files/output_video01.avi)
+* [Finalni video rezultat (Project Video 02)](result_files/output_video02.avi)
 
 ### Discussion
 
