@@ -122,7 +122,7 @@ Unutar svakog prozora algoritam trazi sve nenulte (bele) piksele.
 Ukoliko broj pronadjenih piksela prelazi granicu od 50 (minpix), sledeci prozor se ne postavlja direktno iznad prethodnog, vec se pomera 
 levo ili desno tako da mu centar bude u sredini mase pronadjenih piksela.
 
-Ovo omogucava prozorima da "prate" krivinu puta cak i kada ona naglo skrece.
+Ovo omogucava prozorima da prate krivinu puta cak i kada ona naglo skrece.
 
 Nakon sto su prozori prosli od dna do vrha slike, sakupio sam sve koordinate piksela koji su upali u leve prozore i sve koji su
 upali u desne.
