@@ -8,7 +8,7 @@ def get_binary_video(img):
     # Konverzija u LAB prostor
     lab = cv.cvtColor(img, cv.COLOR_BGR2LAB)
     l_channel = lab[:,:,0] # Lightness (za bele linije)
-    b_channel = lab[:,:,2] # Blue-Yellow (za z linije)
+    b_channel = lab[:,:,2] # Blue-Yellow (za zute linije)
     
     # Detekcija zute boje (B kanal u LAB je koristan za ovo)
     yellow_binary = np.zeros_like(b_channel)
@@ -27,13 +27,14 @@ def get_binary_video(img):
     sx_binary = np.zeros_like(scaled_sobel)
     sx_binary[(scaled_sobel >= 30) & (scaled_sobel <= 100)] = 1
     
-    # Kombinovanje: Zuta ILI Bela ILI (Sobel ivice gde je osvetljenost dovoljna)
+    # Kombinovanje: zuta , bela, Sobel
     combined = np.zeros_like(sx_binary)
     combined[(yellow_binary == 1) | (white_binary == 1) | ((sx_binary == 1) & (l_channel > 150))] = 1
     
     return combined
 
 def find_lane_pixels_video(binary_warped, draw_lanes=False):
+    # Racunanje histograma donje polovine slike kako bismo identifikovali pocetne pozicije leve i desne trake
     histogram = np.sum(binary_warped[binary_warped.shape[0]//2:,:], axis=0)
     midpoint = np.int32(histogram.shape[0]//2)
     leftx_base = np.argmax(histogram[:midpoint])
@@ -46,7 +47,7 @@ def find_lane_pixels_video(binary_warped, draw_lanes=False):
     nonzeroy, nonzerox = np.array(nonzero[0]), np.array(nonzero[1])
     leftx_current, rightx_current = leftx_base, rightx_base
     left_lane_inds, right_lane_inds = [], []
-    
+    # Iteracija kroz prozore od dna ka vrhu slike radi pracenja zakrivljenosti traka
     for window in range(nwindows):
         win_y_low = binary_warped.shape[0] - (window+1)*window_height
         win_y_high = binary_warped.shape[0] - window*window_height
@@ -63,6 +64,7 @@ def find_lane_pixels_video(binary_warped, draw_lanes=False):
         if len(good_right) > minpix: rightx_current = np.int32(np.mean(nonzerox[good_right]))
     
     try:
+        # Spajanje svih pronadjenih indeksa piksela i izdvajanje njihovih koordinata za fitovanje polinoma
         left_lane_inds = np.concatenate(left_lane_inds)
         right_lane_inds = np.concatenate(right_lane_inds)
         
@@ -81,6 +83,7 @@ def process_frame(frame, mtx, dist):
     undist = cv.undistort(frame, mtx, dist, None, mtx)
     binary = get_binary_video(undist)
     
+    # Definisanje izvornih i odredisnih tacaka za transformaciju slike u pticju perspektivu
     src = np.float32([[w*0.45, h*0.62], [w*0.55, h*0.62], [w*0.85, h*0.95], [w*0.15, h*0.95]])
     dst = np.float32([[w*0.2, 0], [w*0.8, 0], [w*0.8, h], [w*0.2, h]])
     M = cv.getPerspectiveTransform(src, dst)
@@ -96,6 +99,7 @@ def process_frame(frame, mtx, dist):
         left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
         right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
         
+        # Konverzija piksela u metre i izracunavanje radijusa zakrivljenosti i pozicije vozila (offset)
         ym_per_pix, xm_per_pix = 30/720, 3.7/700
         left_fit_cr = np.polyfit(ploty*ym_per_pix, left_fitx*xm_per_pix, 2)
         right_fit_cr = np.polyfit(ploty*ym_per_pix, right_fitx*xm_per_pix, 2)
@@ -104,6 +108,7 @@ def process_frame(frame, mtx, dist):
         r_rad = ((1 + (2*right_fit_cr[0]*h*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
         offset = (((left_fitx[-1] + right_fitx[-1])/2) - (w/2)) * xm_per_pix
 
+        # Iscrtavanje detektovane povrsine trake i vracanje maske u originalnu perspektivu kamere
         warp_zero = np.zeros_like(warped).astype(np.uint8)
         color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
         pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
@@ -126,31 +131,30 @@ def main():
 
     mtx, dist = get_calibration_params()
 
-    # --- NOVI DEO: Kalibracija (Dokaz za Writeup) ---
     cal_img = cv.imread('camera_cal/calibration1.jpg')
     if cal_img is not None:
         cv.imwrite('result_files/calibration_original.jpg', cal_img)
         cal_undist = cv.undistort(cal_img, mtx, dist, None, mtx)
         cv.imwrite('result_files/calibration_undistorted.jpg', cal_undist)
 
-    # Koristimo test2.jpg kao osnovu za dokumentaciju
+    # Ulazna slika koriscena za writeup_template.md
     test_img = cv.imread('test_images/test3.jpg')
     if test_img is not None:
         h, w = test_img.shape[:2]
         
-        # 1. Undistort
+        # 1. Primena kalibracije na ulaznu sliku
         demo_undist = cv.undistort(test_img, mtx, dist, None, mtx)
         cv.imwrite('result_files/road_undistorted.jpg', demo_undist)
         cv.imshow('Undistort', demo_undist)
         cv.waitKey(0)
         
-        # 2. Binary (Thresholded)
+        # 2. Binarna slika
         demo_binary = get_binary_video(demo_undist)
         cv.imwrite('result_files/binary_thresholded.jpg', demo_binary * 255)
         cv.imshow('Binary', demo_binary * 255)
         cv.waitKey(0)
         
-        # 3. Perspective transform (Warped)
+        # 3. Perspektivna transformacija
         src = np.float32([[w*0.45, h*0.62], [w*0.55, h*0.62], [w*0.85, h*0.95], [w*0.15, h*0.95]])
         dst = np.float32([[w*0.2, 0], [w*0.8, 0], [w*0.8, h], [w*0.2, h]])
         M = cv.getPerspectiveTransform(src, dst)
@@ -159,7 +163,7 @@ def main():
         cv.imshow('Perspective Transform', demo_warped * 255)
         cv.waitKey(0)
         
-        # 4. Lane Detection Vizualizacija
+        # 4. Detekcija trake na putu
         lx, ly, rx, ry, demo_lanes_img = find_lane_pixels_video(demo_warped, draw_lanes=True)
         if demo_lanes_img is not None:
             left_fit = np.polyfit(ly, lx, 2)
@@ -176,7 +180,7 @@ def main():
             cv.imshow('Lane line detection', demo_lanes_img)
             cv.waitKey(0)
         
-        # 5. Final Result on Image
+        # 5. Finalna slika
         demo_final = process_frame(test_img, mtx, dist)
         cv.imwrite('result_files/final_result_image.jpg', demo_final)
         cv.imshow('Final image', demo_final)
@@ -184,7 +188,7 @@ def main():
         cv.waitKey(0)
         cv.destroyAllWindows()
 
-    # 3. VIDEO PROCESIRANJE
+    # Primena na video snimku
     input_path = 'test_videos/project_video01.mp4'
     output_path = 'result_files/final_video_opencv.avi'
     
