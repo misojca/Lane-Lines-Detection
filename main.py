@@ -124,6 +124,35 @@ def process_frame(frame, mtx, dist):
         return result
     return undist
 
+def process_video(input_path, output_path, mtx, dist):
+
+    cap = cv.VideoCapture(input_path)
+    if not cap.isOpened():
+        print(f"Error opening {input_path}")
+        return
+
+    width = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
+    fps = cap.get(cv.CAP_PROP_FPS)
+    
+    out = cv.VideoWriter(output_path, cv.VideoWriter_fourcc(*'XVID'), fps, (width, height))
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+            
+        processed = process_frame(frame, mtx, dist)
+        out.write(processed)
+        
+        # Prikazivanje prozora tokom obrade 
+        cv.imshow('Lane Detection Video', processed)
+        if cv.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    out.release()
+    print(f"Obrada zavrsena! Video sacuvan kao: {output_path}")
 
 def main():
     if not os.path.exists('result_files'):
@@ -189,27 +218,14 @@ def main():
         cv.destroyAllWindows()
 
     # Primena na video snimku
-    input_path = 'test_videos/project_video01.mp4'
-    output_path = 'result_files/final_video_opencv.avi'
-    
-    cap = cv.VideoCapture(input_path)
-    if not cap.isOpened(): return
+    videos_to_process = [
+        ('test_videos/project_video01.mp4', 'result_files/output_video01.avi'),
+        ('test_videos/project_video02.mp4', 'result_files/output_video02.avi')
+    ]
 
-    width = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
-    fps = cap.get(cv.CAP_PROP_FPS)
-    out = cv.VideoWriter(output_path, cv.VideoWriter_fourcc(*'XVID'), fps, (width, height))
+    for input_v, output_v in videos_to_process:
+        process_video(input_v, output_v, mtx, dist)
 
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret: break
-        processed = process_frame(frame, mtx, dist)
-        out.write(processed)
-        cv.imshow('Lane Detection Video', processed)
-        if cv.waitKey(1) & 0xFF == ord('q'): break
-
-    cap.release()
-    out.release()
     cv.destroyAllWindows()
 
 if __name__ == "__main__":
