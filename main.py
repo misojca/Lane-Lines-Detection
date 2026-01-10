@@ -152,7 +152,6 @@ def process_video(input_path, output_path, mtx, dist):
 
     cap.release()
     out.release()
-    print(f"Obrada zavrsena! Video sacuvan kao: {output_path}")
 
 def main():
     if not os.path.exists('result_files'):
